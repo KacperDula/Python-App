@@ -1,57 +1,44 @@
-{# Extending a base HTML layout #}
 {% extends 'base.html' %}
 
-{# Content block starts here #}
 {% block content %}
 <div class="chat-container">
-  
-  {# Sidebar displaying room info and online users #}
   <div class="sidebar">
-    
-    {# Room Code Display #}
     <div class="info-box">
       <h4>Room Information</h4>
       <div class="info-content">
-        <p>Room Code: <span class="room-code">{{code}}</span></p> {# Displays the room code #}
+        <p>Room Code: <span class="room-code">{{code}}</span></p>
       </div>
     </div>
     
-    {# User List Display #}
     <div class="info-box">
       <h4>Users Online</h4>
       <div class="info-content">
-        <p>Total: <span class="user-count" id="user-count">1</span></p> {# Number of users in the room #}
+        <p>Total: <span class="user-count" id="user-count">1</span></p>
         <ul class="user-list" id="user-list">
-          <li>{{name}} (You)</li> {# Shows current user initially #}
+          <li>{{name}} (You)</li>
         </ul>
       </div>
     </div>
   </div>
 
-  {# Main chat area #}
   <div class="chat-area">
-
-    {# Message display box #}
     <div class="message-box" id="messages">
-      {% for msg in messages %} {# Loop through messages passed from backend #}
+      {% for msg in messages %}
       <div class="message">
         <div class="message-header">
-          <span class="message-sender">{{msg.name}}</span> {# Sender's name #}
-          <span class="message-time">{{msg.time}}</span> {# Timestamp of message #}
+          <span class="message-sender">{{msg.name}}</span>
+          <span class="message-time">{{msg.time}}</span>
         </div>
         <div class="message-content">
           {% if msg.is_file %}
-            {# Check if the file is an image and display it #}
             {% if msg.message.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')) %}
               <a href="{{msg.message}}" target="_blank">
                 <img src="{{msg.message}}" class="uploaded-image" alt="Uploaded image">
               </a>
             {% else %}
-              {# If it's not an image, provide a download link #}
               <a href="{{msg.message}}" download>Download file</a>
             {% endif %}
           {% else %}
-            {# If it's a text message, just show the content #}
             {{msg.message}}
           {% endif %}
         </div>
@@ -59,41 +46,33 @@
       {% endfor %}
     </div>
     
-    {# Input area to send messages or upload files #}
     <div class="input-area">
       <div class="message-input">
-        <input 
-          type="text" 
-          id="message" 
-          placeholder="Type your message..."
-          onkeydown="handleKeyDown(event)"  {# Call function on Enter key press #}
-        >
+        <input type="text" id="message" placeholder="Type your message..."
+          onkeydown="handleKeyDown(event)">
         <label for="file-upload" class="file-upload-label">
-          📎  {# Attachment icon #}
-          <input type="file" id="file-upload" accept="image/*, .pdf, .doc, .docx, .txt" style="display:none">  {# Hidden file input #}
+          📎
+          <input type="file" id="file-upload" accept="image/*, .pdf, .doc, .docx, .txt" style="display:none">
         </label>
-        <button id="send-btn" onclick="sendMessage()">Send</button> {# Send message button #}
+        <button id="send-btn" onclick="sendMessage()">Send</button>
       </div>
     </div>
   </div>
 </div>
 
-{# JavaScript section #}
 <script type="text/javascript">
-  var socketio = io(); // Initialize Socket.IO client
-  const messageInput = document.getElementById("message"); // Get input element
+  var socketio = io();
+  const messageInput = document.getElementById("message");
 
-  // Send message function
   const sendMessage = () => {
-    const message = messageInput.value.trim(); // Get and trim message
-    if (message === "") return; // Don't send empty messages
+    const message = messageInput.value.trim();
+    if (message === "") return;
     
-    socketio.emit("message", { data: message }); // Emit message to server
-    messageInput.value = ""; // Clear input
-    messageInput.focus(); // Refocus on input
+    socketio.emit("message", { data: message });
+    messageInput.value = "";
+    messageInput.focus();
   };
 
-  // Handle Enter key for sending message
   const handleKeyDown = (event) => {
     if (event.key === "Enter") {
       event.preventDefault();
@@ -101,112 +80,13 @@
     }
   };
 
-  // Handle file upload when a file is selected
   document.getElementById('file-upload').addEventListener('change', async function(e) {
-    const file = e.target.files[0]; // Get selected file
+    const file = e.target.files[0];
     if (!file) return;
     
-    // Check file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       alert('File size too large (max 5MB)');
       return;
     }
 
-    const formData = new FormData();
-    formData.append('file', file); // Add file
-    formData.append('room', '{{code}}'); // Add room info
-    formData.append('sender', '{{name}}'); // Add sender name
-
-    try {
-      // Disable button and show upload indicator
-      const sendBtn = document.getElementById('send-btn');
-      sendBtn.disabled = true;
-      sendBtn.textContent = 'Uploading...';
-      
-      const response = await fetch('/upload', {
-        method: 'POST',
-        body: formData
-      });
-      
-      const data = await response.json(); // Parse response
-      
-      if (response.ok) {
-        const isImage = file.type.startsWith('image/');
-        // Send file link as message
-        socketio.emit('message', { 
-          data: data.fileUrl,
-          isFile: true,
-          fileType: file.type
-        });
-      } else {
-        throw new Error(data.error || 'Upload failed');
-      }
-    } catch (error) {
-      console.error('Upload failed:', error);
-      alert('File upload failed: ' + error.message); // Alert user on error
-    } finally {
-      e.target.value = ''; // Reset file input
-      const sendBtn = document.getElementById('send-btn');
-      sendBtn.disabled = false;
-      sendBtn.textContent = 'Send'; // Reset button
-    }
-  });
-
-  // Listen for new messages from the server
-  socketio.on("message", (data) => {
-    const messages = document.getElementById("messages");
-    const messageElement = document.createElement("div");
-    messageElement.className = "message";
-    
-    // If message is a file
-    if (data.isFile) {
-      const isImage = data.fileType && data.fileType.startsWith('image/');
-      
-      // Format message HTML for file
-      messageElement.innerHTML = `
-        <div class="message-header">
-          <span class="message-sender">${data.name}</span>
-          <span class="message-time">${new Date().toLocaleTimeString()}</span>
-        </div>
-        <div class="message-content">
-          ${isImage ? 
-            `<a href="${data.message}" target="_blank">
-              <img src="${data.message}" class="uploaded-image" alt="Uploaded image">
-            </a>` : 
-            `<a href="${data.message}" download>Download file</a>`}
-        </div>
-      `;
-    } else {
-      // Format message HTML for text
-      messageElement.innerHTML = `
-        <div class="message-header">
-          <span class="message-sender">${data.name}</span>
-          <span class="message-time">${new Date().toLocaleTimeString()}</span>
-        </div>
-        <div class="message-content">${data.message}</div>
-      `;
-    }
-    
-    messages.appendChild(messageElement); // Add message to DOM
-    messages.scrollTop = messages.scrollHeight; // Scroll to bottom
-  });
-
-  // Update the user list in real-time
-  socketio.on("user-update", (data) => {
-    document.getElementById("user-count").textContent = data.count; // Update count
-    const userList = document.getElementById("user-list");
-    userList.innerHTML = ''; // Clear list
-    data.users.forEach(user => {
-      const li = document.createElement('li');
-      // Label current user
-      li.textContent = user === "{{name}}" ? user + " (You)" : user;
-      userList.appendChild(li);
-    });
-  });
-
-  // Autofocus message input on page load
-  document.addEventListener('DOMContentLoaded', () => {
-    messageInput.focus();
-  });
-</script>
-{% endblock %}
+    const formData =
