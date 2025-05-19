@@ -1,51 +1,26 @@
-{# Extend the base layout defined in 'base.html' #}
-{% extends 'base.html' %} 
+{% extends 'base.html' %}
 
-{# Define the content block to be injected into the base template #}
 {% block content %}
-
-{# Container for the login form #}
 <div class="login-container">
-
-  {# Form to join or create a chat room — POST method #}
   <form method="post" class="login-box">
-
-    {# Header for the form #}
     <div class="form-header">
       <h3>Enter The Chat Room</h3>
     </div>
     
-    {# Input section for name and room code #}
     <div class="input-box">
-
-      {# Input group for display name #}
       <div class="input-group">
         <label for="name">Display Name</label>
-        <input 
-          type="text" 
-          id="name" 
-          name="name" 
-          placeholder="Pick a name!" 
-          value="{{name}}"  {# Pre-fill with previous value if available #}
-          class="text-input"
-        >
+        <input type="text" id="name" name="name" placeholder="Pick a name!" value="{{name}}"
+          class="text-input" required>
       </div>
       
-      {# Input group for room code #}
       <div class="input-group">
         <label for="code">Room Code</label>
-        <input 
-          type="text" 
-          id="code" 
-          name="code" 
-          placeholder="Enter room code" 
-          value="{{code}}"  {# Pre-fill with previous value if available #}
-          class="text-input"
-        >
+        <input type="text" id="code" name="code" placeholder="Enter room code" value="{{code}}"
+          class="text-input">
       </div>
     </div>
     
-    {# Buttons to either join an existing room or create a new one #}
     <div class="button-group">
       <button type="submit" name="join" class="btn join-btn">
         Join Room
@@ -55,15 +30,12 @@
       </button>
     </div>
     
-    {# Show error message if one exists #}
     {% if error %}
     <div class="error-box">
       <span class="error-icon">!</span>
-      <span class="error-message">{{error}}</span> {# Display error text passed from backend #}
+      <span class="error-message">{{error}}</span>
     </div>
     {% endif %}
   </form>
 </div>
-
-{# End of content block #}
 {% endblock %}
