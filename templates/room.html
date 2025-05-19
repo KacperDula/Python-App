@@ -89,4 +89,92 @@
       return;
     }
 
-    const formData =
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('room', '{{code}}');
+    formData.append('sender', '{{name}}');
+
+    try {
+      const sendBtn = document.getElementById('send-btn');
+      sendBtn.disabled = true;
+      sendBtn.textContent = 'Uploading...';
+      
+      const response = await fetch('/upload', {
+        method: 'POST',
+        body: formData
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        const isImage = file.type.startsWith('image/');
+        socketio.emit('message', { 
+          data: data.fileUrl,
+          isFile: true,
+          fileType: file.type
+        });
+      } else {
+        throw new Error(data.error || 'Upload failed');
+      }
+    } catch (error) {
+      console.error('Upload failed:', error);
+      alert('File upload failed: ' + error.message);
+    } finally {
+      e.target.value = '';
+      const sendBtn = document.getElementById('send-btn');
+      sendBtn.disabled = false;
+      sendBtn.textContent = 'Send';
+    }
+  });
+
+  socketio.on("message", (data) => {
+    const messages = document.getElementById("messages");
+    const messageElement = document.createElement("div");
+    messageElement.className = "message";
+    
+    if (data.isFile) {
+      const isImage = data.fileType && data.fileType.startsWith('image/');
+      
+      messageElement.innerHTML = `
+        <div class="message-header">
+          <span class="message-sender">${data.name}</span>
+          <span class="message-time">${new Date().toLocaleTimeString()}</span>
+        </div>
+        <div class="message-content">
+          ${isImage ? 
+            `<a href="${data.message}" target="_blank">
+              <img src="${data.message}" class="uploaded-image" alt="Uploaded image">
+            </a>` : 
+            `<a href="${data.message}" download>Download file</a>`}
+        </div>
+      `;
+    } else {
+      messageElement.innerHTML = `
+        <div class="message-header">
+          <span class="message-sender">${data.name}</span>
+          <span class="message-time">${new Date().toLocaleTimeString()}</span>
+        </div>
+        <div class="message-content">${data.message}</div>
+      `;
+    }
+    
+    messages.appendChild(messageElement);
+    messages.scrollTop = messages.scrollHeight;
+  });
+
+  socketio.on("user-update", (data) => {
+    document.getElementById("user-count").textContent = data.count;
+    const userList = document.getElementById("user-list");
+    userList.innerHTML = '';
+    data.users.forEach(user => {
+      const li = document.createElement('li');
+      li.textContent = user === "{{name}}" ? user + " (You)" : user;
+      userList.appendChild(li);
+    });
+  });
+
+  document.addEventListener('DOMContentLoaded', () => {
+    messageInput.focus();
+  });
+</script>
+{% endblock %}
