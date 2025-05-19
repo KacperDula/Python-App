@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<!-- Defines the document as an HTML5 document -->
+<html lang="en">
+  <!-- Sets the language of the page to English -->
+  <head>
+    <!-- Declares character encoding as UTF-8 to support most characters -->
+    <meta charset="UTF-8" />
+
+    <!-- Sets the title of the webpage shown in the browser tab -->
+    <title>Chat App</title>
+
+    <!-- Links to the main stylesheet located in 'static/css/style.css' -->
+    <!-- 'url_for' generates the correct URL path to the static file -->
+    <link
+      rel="stylesheet"
+      href="{{url_for('static', filename='css/style.css')}}"
+    />
+
+    <!-- Loads Socket.IO library from a CDN to enable real-time WebSocket communication -->
+    <!-- This is essential for enabling chat messages to be sent/received live -->
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"
+      integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA=="
+      crossorigin="anonymous"
+    ></script>
+
+    <!-- (Redundant) Second include of Socket.IO from the same version -->
+    <!-- This can be removed as it's already included above -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+
+    <!-- Loads Axios library from CDN for making HTTP requests (like file uploads) -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  </head>
+
+  <body>
+    <!-- This is the main content area -->
+    <!-- The `{% block content %}` allows other templates to inject their content here -->
+    <div class="content">{% block content %} {% endblock %}</div>
+  </body>
+</html>
